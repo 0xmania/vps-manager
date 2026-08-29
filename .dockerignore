@@ -1,0 +1,17 @@
+.git
+.github
+.cache
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+web/.vinext
+web/.next
+web/dist
+coverage.out
+*.log
+*.pem
+*.key
+id_rsa
+id_ed25519
+
