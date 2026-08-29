@@ -1,0 +1,39 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Web build and dependency output
+web/node_modules/
+web/.vinext/
+web/.next/
+web/dist/
+web/tsconfig.tsbuildinfo
+
+# Go build and test output
+.cache/
+bin/
+coverage.out
+*.test
+*.prof
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local logs and scratch files
+*.log
+tmp/
+
+# Local assistant and hosting metadata
+skills.md
+web/.openai/hosting.json
+.codex-patches/
+.compare-*/
