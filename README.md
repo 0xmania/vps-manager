@@ -1,10 +1,12 @@
+**English** | [简体中文](README.zh-CN.md)
+
 <div align="center">
 
 # VPS Manager
 
-**面向个人和小团队的自托管 Linux VPS 运维面板。**
+**A self-hosted Linux VPS operations panel for individuals and small teams.**
 
-在浏览器里管理主机、SSH、运行快照、固定运维动作、异常进程和 Cloudflare Workers。
+Manage hosts, SSH access, runtime snapshots, predefined operations, anomalous processes, and Cloudflare Workers from your browser.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
 ![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
@@ -18,22 +20,22 @@
 </p>
 
 > [!NOTE]
-> 当前版本面向本地开发和隔离环境，生产凭据交接和恢复流程尚未接通。
+> The current version targets local development and isolated environments. Production credential handoff and recovery workflows are not yet implemented end-to-end.
 
-## 你可以用它做什么
+## What you can do
 
-| 主机管理 | 日常运维 | 分析与发布 |
+| Host management | Routine operations | Analysis and deployment |
 |---|---|---|
-| 维护 VPS 台账和标签 | 查看 CPU、内存、磁盘、端口与服务 | 用规则扫描异常进程 |
-| 探测并确认 SSH host key | 执行固定命令和参数化 Runbook | 可选 AI 解读与排查建议 |
-| 加密保存 SSH 私钥 | 在浏览器中打开 WebSSH | 管理 Worker、版本、deploy 与 rollback |
-| 查看 Job 和审计记录 | 取消任务并查看结构化结果 | 保存 Cloudflare Token 元数据 |
+| Maintain a VPS inventory with tags | View CPU, memory, disk, ports, and services | Scan for anomalous processes using rules |
+| Probe and verify SSH host keys | Run predefined commands and parameterized runbooks | Get optional AI explanations and troubleshooting suggestions |
+| Store SSH private keys in encrypted form | Open WebSSH sessions in the browser | Manage Workers, versions, deployments, and rollbacks |
+| Review jobs and audit records | Cancel jobs and inspect structured results | Store Cloudflare token metadata |
 
-日常操作使用固定命令或参数化 Runbook，交互操作使用 WebSSH。
+Use predefined commands or parameterized runbooks for routine work, and WebSSH for interactive operations.
 
-## 快速启动
+## Quick start
 
-需要 Docker Desktop 或 Docker Engine + Compose。
+Docker Desktop or Docker Engine with Compose is required.
 
 ```powershell
 $env:VPSMGR_DEV_BOOTSTRAP_TOKEN = [Convert]::ToHexString(
@@ -48,48 +50,48 @@ docker compose up -d
 docker compose ps
 ```
 
-打开：
+Open:
 
-- Web：<http://127.0.0.1:3000/login>
-- Control plane：<http://127.0.0.1:8080/healthz>
+- Web: <http://127.0.0.1:3000/login>
+- Control plane: <http://127.0.0.1:8080/healthz>
 
-本地开发模式会提供模拟登录。进入工作台后，按下面的顺序完成第一台主机接入：
+Local development mode provides mock authentication. After entering the workspace, onboard your first host in this order:
 
 ```text
-添加 VPS
-  → 探测 SSH host key
-  → 核对并确认指纹
-  → 保存 SSH 凭据
-  → 获取运行快照
+Add VPS
+  → Probe SSH host key
+  → Review and confirm the fingerprint
+  → Save SSH credentials
+  → Fetch a runtime snapshot
 ```
 
-停止服务：
+Stop the services:
 
 ```powershell
 docker compose down
 ```
 
-Compose 使用内存数据和临时开发密钥，重启控制面会清空主机、凭据、会话、Job 与审计事件。
+The Compose setup uses in-memory data and temporary development keys. Restarting the control plane clears hosts, credentials, sessions, jobs, and audit events.
 
-## 工作区
+## Workspace
 
 ### Hosts
 
-录入地址、端口、系统用户和标签。host key 探测只读取 SSH 服务端身份；确认后，后续连接都会使用保存的完整公钥。
+Add an address, port, system user, and tags. Host key probing reads only the SSH server identity. Once the fingerprint is confirmed, subsequent connections use the saved full public key.
 
 ### Operations
 
-运行快照返回 CPU、内存、负载、磁盘和字段级错误。固定命令支持磁盘、监听端口和常见服务状态。异常扫描只采集 PID、父 PID、用户、CPU、运行时间和进程名，不读取完整命令行或环境变量。
+Runtime snapshots report CPU, memory, load, disk usage, and field-level errors. Predefined commands cover disk usage, listening ports, and common service states. Anomaly scans collect only the PID, parent PID, user, CPU usage, elapsed time, and process name; they do not read full command lines or environment variables.
 
-### WebSSH 与 Runbooks
+### WebSSH and runbooks
 
-WebSSH 使用一次性终端票据。Runbook 在执行前先生成预览，变更类步骤默认关闭。终端断开或页面切换时，前端会取消仍在等待的票据请求。
+WebSSH uses single-use terminal tickets. Runbooks generate a preview before execution, and mutating steps are disabled by default. If the terminal disconnects or the page changes, the frontend cancels any ticket request still waiting to be claimed.
 
 ### Cloudflare Workers
 
-工作区支持 Worker 元数据、加密 Token、预构建 JavaScript 模块、部署计划和回滚计划。Provider 调用默认关闭，开启后才会把计划发送到 Cloudflare API。
+The workspace supports Worker metadata, encrypted tokens, prebuilt JavaScript modules, deployment plans, and rollback plans. Provider calls are disabled by default; plans are sent to the Cloudflare API only after execution is enabled.
 
-## 架构
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -106,46 +108,46 @@ flowchart LR
     API --> Provider[Cloudflare Provider]
 ```
 
-- `web/` 负责页面、身份桥和浏览器侧 API 代理。
-- `services/control-plane/` 负责权限、主机、任务、审计与操作编排。
-- `services/connector/` 负责 SSH、PTY、WebSSH 和 Runbook 执行。
-- `services/persistence/` 与 `services/keymanager/` 提供 PostgreSQL、Redis 和 Vault 适配器。
+- `web/` provides the user interface, identity bridge, and browser-facing API proxy.
+- `services/control-plane/` handles permissions, hosts, jobs, auditing, and operation orchestration.
+- `services/connector/` handles SSH, PTY, WebSSH, and runbook execution.
+- `services/persistence/` and `services/keymanager/` provide PostgreSQL, Redis, and Vault adapters.
 
-开发模式下，快照、固定命令、异常扫描和 host key 探测走控制面内的 SSH runner，WebSSH 与 Runbook 走独立 Connector。生产模式的 host key 探测走 Connector；其余 SSH 操作还在等待凭据交接协议。
+In development mode, runtime snapshots, predefined commands, anomaly scans, and host key probing use the SSH runner built into the control plane. WebSSH and runbooks use the standalone Connector. In production mode, host key probing uses the Connector; the remaining SSH operations are waiting for the credential handoff protocol.
 
-## 默认开关
+## Default switches
 
-| 能力 | 默认值 | 开启方式 |
+| Capability | Default | Enable with |
 |---|---:|---|
-| 连接私网测试 VPS | 关闭 | `VPSMGR_ALLOW_PRIVATE_TARGETS=true` |
-| 执行变更 Runbook | 关闭 | `VPSMGR_ENABLE_MUTATIONS=true` |
-| 执行 Cloudflare deploy/rollback | 关闭 | `VPSMGR_ENABLE_CLOUDFLARE_EXECUTION=true` |
-| 远端 AI 网关 | 关闭 | 原生启动时配置完整 `VPSMGR_AI_GATEWAY_*` 参数 |
+| Connect to private-network test VPS instances | Off | `VPSMGR_ALLOW_PRIVATE_TARGETS=true` |
+| Run mutating runbooks | Off | `VPSMGR_ENABLE_MUTATIONS=true` |
+| Execute Cloudflare deployments and rollbacks | Off | `VPSMGR_ENABLE_CLOUDFLARE_EXECUTION=true` |
+| Use a remote AI gateway | Off | Configure all required `VPSMGR_AI_GATEWAY_*` variables when running natively |
 
-私网和变更 Runbook 的开关会同时传给控制面与 Connector。Compose 默认使用本地异常分析结果，不挂载 AI Token 文件。
+The private-network and mutating-runbook switches are passed to both the control plane and the Connector. By default, Compose uses local anomaly-analysis results and does not mount an AI token file.
 
-## 运行模式
+## Runtime profiles
 
-| 项目 | Compose | 生产配置 |
+| Component | Compose | Production configuration |
 |---|---|---|
-| 数据 | 内存 Repository | PostgreSQL |
-| 协调 | 进程内任务状态 | Redis 就绪检查 |
-| 密钥 | 临时 Dev KMS，可在进程内解密 | Vault Transit `wrap-only` |
-| 身份 | 本地模拟身份与开发会话 | Ed25519 签名 identity bridge |
-| SSH | 开发执行器 + 独立 Connector | Connector 已接入，凭据交接未接通 |
-| Cloudflare | 控制面按配置调用 Provider | Provider 已接入，凭据交接未接通 |
+| Data | In-memory repository | PostgreSQL |
+| Coordination | In-process job state | Redis readiness check |
+| Keys | Temporary Dev KMS with in-process decryption | Vault Transit `wrap-only` |
+| Identity | Mock local identity and development sessions | Ed25519-signed identity bridge |
+| SSH | Development runner + standalone Connector | Connector integrated; credential handoff not connected |
+| Cloudflare | Control plane calls the Provider when configured | Provider integrated; credential handoff not connected |
 
-生产配置目前只支持元数据和密文写入；需要解密凭据的 WebSSH、Runbook、SSH Job 和 Cloudflare 操作尚不可用。
+The production configuration currently supports writing metadata and ciphertext only. WebSSH, runbooks, SSH jobs, and Cloudflare operations that require credential decryption are not yet available.
 
-## 原生开发
+## Native development
 
-Go 服务：
+Go services:
 
 ```powershell
 go build ./services/...
 ```
 
-Web：
+Web:
 
 ```powershell
 cd web
@@ -153,36 +155,36 @@ npm ci
 npm run build
 ```
 
-Connector 和控制面的单独启动参数分别见：
+For standalone Connector and control-plane startup options, see:
 
 - [SSH Connector](services/connector/README.md)
 - [Control plane API](services/control-plane/README.md)
 
-## 目录
+## Repository layout
 
 ```text
-web/                         Web UI 与 BFF
-services/control-plane/      API、权限、任务和审计
-services/connector/          SSH、WebSSH 和 Runbook
-services/ai/                 异常结果 AI 适配器
+web/                         Web UI and BFF
+services/control-plane/      API, permissions, jobs, and auditing
+services/connector/          SSH, WebSSH, and runbooks
+services/ai/                 AI adapter for anomaly results
 services/cloudflareprovider/ Cloudflare Workers Provider
 services/persistence/        PostgreSQL / Redis
 services/keymanager/         Vault Transit
-migrations/                  PostgreSQL 迁移与权限示例
-docs/                        架构与运行说明
+migrations/                  PostgreSQL migrations and permission examples
+docs/                        Architecture and operation guides
 ```
 
-## 文档
+## Documentation
 
-| 文档 | 内容 |
+| Document | Contents |
 |---|---|
-| [Architecture](docs/architecture.md) | 组件、数据与执行流程 |
-| [WebSSH gateway](docs/webssh-gateway.md) | 票据、WebSocket 与 Connector 协议 |
-| [Runbooks](docs/runbooks.md) | 固定目录、预览与执行流程 |
-| [Runtime permissions](docs/permission-matrix.md) | 当前角色与 API 权限 |
-| [AI analysis](docs/ai-analysis.md) | 输入输出、降级和数据范围 |
-| [Cloudflare Provider](docs/cloudflare-provider.md) | Worker 版本与部署接口 |
-| [Production adapters](docs/production-adapters.md) | PostgreSQL、Redis 与 Vault 配置 |
+| [Architecture](docs/architecture.md) | Components, data, and execution flows |
+| [WebSSH gateway](docs/webssh-gateway.md) | Tickets, WebSocket, and Connector protocol |
+| [Runbooks](docs/runbooks.md) | Fixed catalog, previews, and execution flow |
+| [Runtime permissions](docs/permission-matrix.md) | Current roles and API permissions |
+| [AI analysis](docs/ai-analysis.md) | Inputs, outputs, fallback behavior, and data scope |
+| [Cloudflare Provider](docs/cloudflare-provider.md) | Worker version and deployment interfaces |
+| [Production adapters](docs/production-adapters.md) | PostgreSQL, Redis, and Vault configuration |
 
 ## License
 
