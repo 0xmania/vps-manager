@@ -1,0 +1,102 @@
+name: vps-manager-mvp
+
+# Local development stack. API/Web ports stay on loopback. The Connector is
+# reachable only through a shared Unix socket and can access private targets
+# only when the operator explicitly opts in.
+services:
+  connector:
+    image: ${VPSMGR_GO_IMAGE:-golang:1.26.6-bookworm}
+    init: true
+    working_dir: /workspace
+    command:
+      [
+        "sh",
+        "-lc",
+        "rm -f /connector/run/connector.sock && exec go run ./services/connector/cmd/connector",
+      ]
+    environment:
+      VPSMGR_CONNECTOR_LISTEN: unix:///connector/run/connector.sock
+      VPSMGR_CONNECTOR_HMAC_KEY_ID: ${VPSMGR_CONNECTOR_HMAC_KEY_ID:-control-plane}
+      VPSMGR_CONNECTOR_HMAC_KEY: ${VPSMGR_CONNECTOR_HMAC_KEY:?set a base64-encoded random key of at least 32 bytes}
+      VPSMGR_CONNECTOR_ALLOW_PRIVATE_TARGETS: ${VPSMGR_ALLOW_PRIVATE_TARGETS:-false}
+      VPSMGR_CONNECTOR_WEBSSH_ALLOWED_ORIGINS: http://127.0.0.1:8080
+      VPSMGR_CONNECTOR_ENABLE_MUTATIONS: ${VPSMGR_ENABLE_MUTATIONS:-false}
+    volumes:
+      - .:/workspace:ro
+      - connector_socket:/connector/run
+      - go_module_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    restart: unless-stopped
+
+  control-plane:
+    image: ${VPSMGR_GO_IMAGE:-golang:1.26.6-bookworm}
+    init: true
+    working_dir: /workspace
+    command: ["go", "run", "./services/control-plane/cmd/control-plane"]
+    environment:
+      VPSMGR_LISTEN_ADDR: 0.0.0.0:8080
+      VPSMGR_DEV_MODE: "true"
+      VPSMGR_DEV_ALLOW_NON_LOOPBACK: "true"
+      VPSMGR_DEV_BOOTSTRAP_TOKEN: ${VPSMGR_DEV_BOOTSTRAP_TOKEN:?set a random value containing at least 32 bytes}
+      VPSMGR_ALLOW_PRIVATE_TARGETS: ${VPSMGR_ALLOW_PRIVATE_TARGETS:-false}
+      VPSMGR_SESSION_TTL: ${VPSMGR_SESSION_TTL:-1h}
+      VPSMGR_JOB_TIMEOUT: ${VPSMGR_JOB_TIMEOUT:-100s}
+      VPSMGR_CONNECTOR_UNIX_SOCKET: /connector/run/connector.sock
+      VPSMGR_CONNECTOR_HMAC_KEY_ID: ${VPSMGR_CONNECTOR_HMAC_KEY_ID:-control-plane}
+      VPSMGR_CONNECTOR_HMAC_KEY: ${VPSMGR_CONNECTOR_HMAC_KEY:?set a base64-encoded random key of at least 32 bytes}
+      VPSMGR_WEBSSH_PUBLIC_URL: ws://127.0.0.1:8080/api/v1/webssh/connect
+      VPSMGR_WEBSSH_ALLOWED_ORIGINS: http://127.0.0.1:3000
+      VPSMGR_WEBSSH_CONNECTOR_ORIGIN: http://127.0.0.1:8080
+      VPSMGR_ENABLE_MUTATIONS: ${VPSMGR_ENABLE_MUTATIONS:-false}
+      VPSMGR_ENABLE_CLOUDFLARE_EXECUTION: ${VPSMGR_ENABLE_CLOUDFLARE_EXECUTION:-false}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - .:/workspace:ro
+      - connector_socket:/connector/run
+      - go_module_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    depends_on:
+      - connector
+    restart: unless-stopped
+
+  web:
+    image: ${VPSMGR_NODE_IMAGE:-node:22-bookworm-slim}
+    init: true
+    working_dir: /workspace/web
+    command: ["sh", "-lc", "npm ci && npm run dev -- --hostname 0.0.0.0"]
+    environment:
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:3000
+      CONTROL_PLANE_URL: http://control-plane:8080
+      CONTROL_PLANE_DEV_BOOTSTRAP: ${VPSMGR_DEV_BOOTSTRAP_TOKEN:?set a random value containing at least 32 bytes}
+      CONTROL_PLANE_DEV_ROLE: admin
+      WRANGLER_LOG_PATH: /tmp/vps-manager-wrangler/logs
+      MINIFLARE_REGISTRY_PATH: /tmp/vps-manager-wrangler/registry
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./web:/workspace/web:ro
+      - web_node_modules:/workspace/web/node_modules
+      - web_vinext_cache:/workspace/web/.vinext
+    depends_on:
+      - control-plane
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  connector_socket:
+  go_module_cache:
+  go_build_cache:
+  web_node_modules:
+  web_vinext_cache:

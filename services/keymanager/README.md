@@ -1,18 +1,14 @@
 # Key manager adapter
 
-`VaultTransit` implements key wrapping for envelope encryption. A 32-byte per-object data key is sent to Vault Transit `encrypt`; only the returned `vault:vN:...` ciphertext is persisted. Unwrap calls Transit `decrypt` with the same context.
+`VaultTransit` 为 SSH 私钥和 Cloudflare Token 包装每个对象的数据密钥。控制面生产 runtime 使用 `wrap-only` 身份保存新凭据，数据库只记录 Vault ciphertext、版本和对象上下文。
 
-Configuration rules:
+该包提供进程内 `MemoryManager`；运行中的开发控制面使用自己的临时 Dev KMS。两者都只面向本地开发，重启后无法恢复之前的密文。
 
-- Vault uses HTTPS with normal certificate verification; a private CA may be supplied.
-- The address cannot contain credentials, query parameters or an API path.
-- Transit mount and key names are validated.
-- Environment HTTP proxies and redirects are disabled.
-- An identity can be configured as `WrapOnly` or `UnwrapOnly`.
-- Tokens come from a `TokenSource` and are omitted from formatted configuration and errors.
+## Vault 配置
 
-The Transit key must be a derived key because `installation_id + credential_id + version + credential_type` is sent as Vault `context`. Separate policies can grant upload identities access to `transit/encrypt/<key>` and execution identities access to `transit/decrypt/<key>`.
+- Vault 地址使用 HTTPS；私有 CA 可以通过配置文件提供。
+- Transit key 使用 derived key，对象上下文由 `installation_id`、对象 ID、版本和凭据类型组成。
+- 上传身份只需要 `transit/encrypt/<key>`；真正执行 SSH 或部署的身份应单独持有 `transit/decrypt/<key>`。
+- Token 从文件读取，不放进 URL、命令行参数或格式化输出。
 
-`MemoryManager` is an in-memory development implementation. It is not durable.
-
-This package is an adapter library and is not connected to a runnable service in this codebase.
+当前缺少从 `wrap-only` 控制面向独立 `unwrap-only` Connector/deployer 交接凭据的运行协议。因此生产模式可以登记密文，但需要解密的执行暂不可用。

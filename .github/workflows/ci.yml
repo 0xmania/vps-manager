@@ -1,0 +1,81 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/go.mod
+          cache: true
+      - name: Download modules
+        working-directory: services
+        run: go mod download
+      - name: Check formatting
+        shell: bash
+        run: |
+          files="$(find services -type f -name '*.go' -print)"
+          unformatted="$(gofmt -l $files)"
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            exit 1
+          fi
+      - name: Vet
+        working-directory: services
+        run: go vet ./...
+      - name: Build
+        working-directory: services
+        run: go build ./...
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Check formatting
+        run: npx --no-install oxfmt --check app lib
+      - name: Lint
+        run: npx --no-install oxlint app lib
+      - name: Type-check
+        run: npx --no-install tsc --noEmit --incremental false
+      - name: Build
+        run: npm run build
+
+  compose:
+    name: Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      VPSMGR_DEV_BOOTSTRAP_TOKEN: ci-configuration-only-token-32-bytes-minimum
+      VPSMGR_CONNECTOR_HMAC_KEY: Y2ktY29uZmlndXJhdGlvbi1vbmx5LWtleS0zMi1ieXRlcy1taW5pbXVt
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose model
+        run: docker compose config --quiet

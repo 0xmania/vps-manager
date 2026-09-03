@@ -61,18 +61,23 @@ const (
 )
 
 type Job struct {
-	ID                 string           `json:"id"`
-	Type               string           `json:"type"`
-	HostID             string           `json:"hostId"`
-	State              JobState         `json:"state"`
-	RequestedBy        string           `json:"requestedBy"`
-	RequestedSessionID string           `json:"-"`
-	CreatedAt          time.Time        `json:"createdAt"`
-	StartedAt          *time.Time       `json:"startedAt,omitempty"`
-	FinishedAt         *time.Time       `json:"finishedAt,omitempty"`
-	Snapshot           *RuntimeSnapshot `json:"snapshot,omitempty"`
-	Error              *JobError        `json:"error,omitempty"`
-	Version            uint64           `json:"version"`
+	ID                 string                  `json:"id"`
+	Type               string                  `json:"type"`
+	HostID             string                  `json:"hostId"`
+	State              JobState                `json:"state"`
+	RequestedBy        string                  `json:"requestedBy"`
+	RequestedSessionID string                  `json:"-"`
+	CreatedAt          time.Time               `json:"createdAt"`
+	StartedAt          *time.Time              `json:"startedAt,omitempty"`
+	FinishedAt         *time.Time              `json:"finishedAt,omitempty"`
+	Snapshot           *RuntimeSnapshot        `json:"snapshot,omitempty"`
+	Command            *CommandDescriptor      `json:"command,omitempty"`
+	CommandResult      *CommandResult          `json:"commandResult,omitempty"`
+	AnomalyScan        *AnomalyScanResult      `json:"anomalyScan,omitempty"`
+	RunbookPreview     *RunbookPreviewResult   `json:"runbookPreview,omitempty"`
+	RunbookExecution   *RunbookExecutionResult `json:"runbookExecution,omitempty"`
+	Error              *JobError               `json:"error,omitempty"`
+	Version            uint64                  `json:"version"`
 }
 
 type JobError struct {

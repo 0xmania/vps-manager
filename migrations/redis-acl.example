@@ -1,0 +1,5 @@
+# Replace the password and username through the secret-management path. Do not
+# commit the rendered line. Key access is limited to this adapter's namespace.
+# EVAL is needed only for compare-token lease renew/release scripts; the Lua
+# scripts can invoke only commands also granted to this identity.
+user vpsmgr_app on >REPLACE_WITH_RANDOM_SECRET ~vpsmgr:* +ping +get +set +exists +del +pexpire +eval +evalsha

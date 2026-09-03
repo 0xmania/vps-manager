@@ -95,23 +95,6 @@ func (s FileTokenSource) Token(_ context.Context) ([]byte, error) {
 	return contents, nil
 }
 
-// StaticTokenSource is intended for tests and secret-injection frameworks.
-// Its String and GoString methods never expose the token.
-type StaticTokenSource struct{ token []byte }
-
-func NewStaticTokenSource(token []byte) (*StaticTokenSource, error) {
-	if len(token) == 0 || len(token) > maxVaultTokenBytes || bytes.IndexAny(token, "\r\n\x00") >= 0 {
-		return nil, errors.New("Vault token is invalid")
-	}
-	return &StaticTokenSource{token: append([]byte(nil), token...)}, nil
-}
-
-func (*StaticTokenSource) String() string   { return "StaticTokenSource{token:[redacted]}" }
-func (*StaticTokenSource) GoString() string { return "keymanager.StaticTokenSource{token:[redacted]}" }
-func (s *StaticTokenSource) Token(_ context.Context) ([]byte, error) {
-	return append([]byte(nil), s.token...), nil
-}
-
 type VaultConfig struct {
 	Address                  string
 	TransitMount             string
@@ -189,19 +172,6 @@ type VaultTransit struct {
 }
 
 func NewVaultTransit(config VaultConfig, tokenSource TokenSource) (*VaultTransit, error) {
-	return newVaultTransit(config, tokenSource, nil)
-}
-
-// NewVaultTransitWithClient exists only for deterministic transport tests.
-// Production callers must use NewVaultTransit so TLS validation cannot be replaced.
-func NewVaultTransitWithClient(config VaultConfig, tokenSource TokenSource, client *http.Client) (*VaultTransit, error) {
-	if config.Environment != "test" {
-		return nil, errors.New("custom Vault HTTP clients are test-only")
-	}
-	return newVaultTransit(config, tokenSource, client)
-}
-
-func newVaultTransit(config VaultConfig, tokenSource TokenSource, client *http.Client) (*VaultTransit, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -211,23 +181,14 @@ func newVaultTransit(config VaultConfig, tokenSource TokenSource, client *http.C
 	if config.RequestTimeout == 0 {
 		config.RequestTimeout = 10 * time.Second
 	}
-	if client == nil {
-		tlsConfig, err := vaultTLSConfig(config.TLSCAFile, config.TLSServerName)
-		if err != nil {
-			return nil, err
-		}
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = tlsConfig
-		transport.Proxy = nil
-		client = &http.Client{Transport: transport, Timeout: config.RequestTimeout, CheckRedirect: rejectVaultRedirect}
-	} else {
-		copyClient := *client
-		if copyClient.Timeout == 0 || copyClient.Timeout > config.RequestTimeout {
-			copyClient.Timeout = config.RequestTimeout
-		}
-		copyClient.CheckRedirect = rejectVaultRedirect
-		client = &copyClient
+	tlsConfig, err := vaultTLSConfig(config.TLSCAFile, config.TLSServerName)
+	if err != nil {
+		return nil, err
 	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = tlsConfig
+	transport.Proxy = nil
+	client := &http.Client{Transport: transport, Timeout: config.RequestTimeout, CheckRedirect: rejectVaultRedirect}
 	address := strings.TrimRight(config.Address, "/")
 	addressHash := sha256.Sum256([]byte(address))
 	return &VaultTransit{

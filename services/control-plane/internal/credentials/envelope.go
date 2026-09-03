@@ -1,5 +1,5 @@
 // Package credentials provides envelope encryption and encrypted credential
-// storage primitives. It intentionally has no API that serializes plaintext.
+// storage primitives and exposes no API that serializes plaintext.
 package credentials
 
 import (
@@ -33,7 +33,7 @@ type KeyUnwrapper interface {
 	UnwrapKey(ctx context.Context, wrappedKey, nonce, aad []byte) ([]byte, error)
 }
 
-// Envelope contains ciphertext only. Its fields are deliberately excluded from
+// Envelope contains ciphertext only. Its fields are excluded from
 // JSON so an accidental API serialization cannot disclose encrypted blobs or
 // wrapping metadata.
 type Envelope struct {
@@ -138,9 +138,9 @@ func (s *Service) Open(ctx context.Context, envelope Envelope, aad []byte, use f
 	return use(plaintext)
 }
 
-// DevKMS is an in-memory AES-GCM key wrapper for local development and tests.
-// It is intentionally non-persistent and must not be used for durable or
-// production credentials.
+// DevKMS is an in-memory AES-GCM key wrapper for local development.
+// It is non-persistent and must not be used for durable or production
+// credentials.
 type DevKMS struct {
 	keyID  string
 	master []byte

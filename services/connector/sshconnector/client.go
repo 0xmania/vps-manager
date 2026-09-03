@@ -54,8 +54,8 @@ df -P -B1 2>/dev/null | awk 'NR > 1 && $2 ~ /^[0-9]+$/ {mount=$6; for (i=7; i<=N
 `}
 }
 
-// Config contains connection policy. Private key material is represented by
-// an ssh.AuthMethod and is never retained by Client after Run returns.
+// Config contains connection policy. Private key material is provided through
+// ssh.AuthMethod; Client does not retain it after Run returns.
 type Config struct {
 	Address        string
 	Port           int
@@ -89,7 +89,7 @@ type Client struct{}
 func New() *Client { return &Client{} }
 
 // ProbeHostKey performs only TCP connect and SSH key exchange. Its callback
-// deliberately aborts as soon as the server host key is seen, before client
+// aborts as soon as the server host key is seen, before client
 // authentication and without opening a session or running code. The result is
 // untrusted until independently verified and explicitly pinned.
 func (c *Client) ProbeHostKey(ctx context.Context, address string, port int, allowPrivate bool) (HostKeyObservation, error) {
