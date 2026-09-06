@@ -24,6 +24,8 @@ Manage hosts, SSH access, runtime snapshots, predefined operations, anomalous pr
 
 ## What you can do
 
+Version notes: [v0.1.0](docs/releases/v0.1.0.md).
+
 | Host management | Routine operations | Analysis and deployment |
 |---|---|---|
 | Maintain a VPS inventory with tags | View CPU, memory, disk, ports, and services | Scan for anomalous processes using rules |
