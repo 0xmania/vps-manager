@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version-file: services/go.mod
@@ -51,7 +51,7 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
@@ -76,6 +76,6 @@ jobs:
       VPSMGR_DEV_BOOTSTRAP_TOKEN: ci-configuration-only-token-32-bytes-minimum
       VPSMGR_CONNECTOR_HMAC_KEY: Y2ktY29uZmlndXJhdGlvbi1vbmx5LWtleS0zMi1ieXRlcy1taW5pbXVt
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate Compose model
         run: docker compose config --quiet
